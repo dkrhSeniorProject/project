@@ -1,16 +1,17 @@
 import matplotlib.pyplot as plt
 from random import randint
 
-def update_line(hl, new_data):
-    hl.set_xdata(1)
-    hl.set_ydata(new_data)
+def update_line(hl, xcoord, ycoord):
+    hl.set_xdata(xcoord)
+    hl.set_ydata(ycoord)
     plt.draw()
 plt.ion()
 fig = plt.figure()
 ax = fig.add_subplot(111)
-plt.axis([0,2, 0, 11])
+plt.axis([0,10, 0, 10])
 hl, = plt.plot([1], [randint(1,10)], 'ro')
 plt.ylabel('some numbers')
+
 while 1 :
-	update_line(hl, randint(1,10))
+	update_line(hl, randint(1,10), randint(1,10))
 	fig.canvas.draw()
