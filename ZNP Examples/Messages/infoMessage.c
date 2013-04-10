@@ -32,8 +32,10 @@ void printInfoMessage(struct infoMessage* im)
     printHeader(im->header);
     printf(", Device Type/subType=%02X/%02X, cause=%02X, numParameters=%u: ", 
            im->deviceType, im->deviceSubType, im->cause, im->numParameters);
+    /******************* killing this ......
     for (int i=0; i<im->numParameters; i++)
         printf("[%04X] ", im->parameters[i]);
+      **************************************/
     printf("\r\n");
 }
 
@@ -61,6 +63,7 @@ void serializeRouterForwardMessage(struct routerForwardMessage *rfm, unsigned ch
 {
   serializeHeader(rfm->header,destptr);
   destptr += getSizeOfHeader(rfm->header); //offset
+  *destptr++ = rfm->lqi;     //lqi
   serializeInfoMessage(rfm->infoMessage,destptr);   
 //  destptr += getSizeOfInfoMessage(rfm->infoMessage);  //unnecessaryoffset
 }
@@ -98,7 +101,7 @@ unsigned int getSizeOfInfoMessage(struct infoMessage* im)
 
 unsigned int getSizeOfRFM(struct routerForwardMessage *rfm)
 {
-  return getSizeOfHeader(rfm->header) + getSizeOfInfoMessage(rfm->infoMessage);
+  return getSizeOfHeader(rfm->header) + sizeof(rfm->lqi) + getSizeOfInfoMessage(rfm->infoMessage);
 }
 
 struct routerForwardMessage deserializeRouterForwardMessage(unsigned char* source)
@@ -109,7 +112,8 @@ struct routerForwardMessage deserializeRouterForwardMessage(unsigned char* sourc
   struct header hdr = deserializeHeader(sourcePtr);
   rfm.header = &hdr;    //decode
   sourcePtr += getSizeOfHeader(&hdr) ; //shouldn't have to +3 ... i'm worried
-
+  //get size get lqi value
+  rfm.lqi = *sourcePtr++;     //hmmmm
   //info message deserialize 
   struct header ihdr = deserializeHeader(sourcePtr);
   im.header = &ihdr;
