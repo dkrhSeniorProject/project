@@ -1,7 +1,8 @@
 CURRENT
 map.py - working code
-plot.py - test script
+example.py - example of how to use map.py
 
 OUTDATED
 simple_anim.py - example script that i worked off of
 test.py - another test script (old)
+plot.py - test script
