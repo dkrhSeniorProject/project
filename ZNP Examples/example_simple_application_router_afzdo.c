@@ -206,6 +206,8 @@ void pollAndSendMsgs()
                 printf("\r\n");
                 printf("Router header:\r\n");
                 printHeader(rfm.header);
+                rfm.lqi = znpBuf[SRSP_HEADER_SIZE+9];
+                printf("Recieved lqi: %02X\r\n",rfm.lqi);
             //    toggleLed(1);   //toggle
                 //setLed(0);
                 hdr.sequence = sequenceNumber++;
@@ -225,17 +227,18 @@ void pollAndSendMsgs()
                 } else {     
                     state = STATE_IDLE;
                 }
-                /*** Testing serialize and deserialize behaviour ***/
+                /*** Testing serialize and deserialize behaviour ***
                 printf("Testing deserializing ...\r\n");
                 struct routerForwardMessage rrr = deserializeRouterForwardMessage(msgBuf);
                 printf("De-header:\r\n");
                 printHeader(rrr.header);
+                printf("Deserialized lqi: %02X\r\n",rrr.lqi);
                 printf("\r\nDe-message:\r\n");
                 printInfoMessage(rrr.infoMessage);
                 printf("Hex bytes: ");
                 printHexBytes(msgBuf,getSizeOfRFM(&rfm));
                 printf("Testing done!\r\n");
-
+                ************/
             } else {
                 printf ("Recieved a weird-ass message ....\r\n");
             } 
@@ -243,7 +246,7 @@ void pollAndSendMsgs()
         }
         znpBuf[SRSP_LENGTH_FIELD] = 0; 
     }
-    delayMs(1000);  //wait 1 sec after recieving a message before sending anything
+//    delayMs(1000);  //wait 1 sec after recieving a message before sending anything
 }
 
 /* @} */

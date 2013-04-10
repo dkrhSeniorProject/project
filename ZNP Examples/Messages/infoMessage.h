@@ -47,6 +47,7 @@
 struct routerForwardMessage // message from the end device forwarded by the router
 {
 	struct header* header;				//router's own header for verification
+	unsigned char lqi;					// get lqi value of the end-device
 	struct infoMessage* infoMessage;	//message from end device
 };
 

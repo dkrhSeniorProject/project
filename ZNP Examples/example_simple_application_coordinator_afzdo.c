@@ -95,10 +95,11 @@ void displayMessages()
                 for (int j = 0; j<8; j++)
                 {
                     printf("%02X", im.header->mac[j]);
+                    if (j != 7) printf("-");
                 }
                 printf(",LQI=%02X", znpBuf[SRSP_HEADER_SIZE+9]);
 #endif
-
+/*
                 if (im.numParameters > 0)
                 {
                     printf(";PanID:%04X", im.parameters[0]);
@@ -114,13 +115,15 @@ void displayMessages()
                     }
                     printf("\r\n");
                 }
-            }else if (IS_RFM_CLUSTER()) {
+*/            }else if (IS_RFM_CLUSTER()) {
                 struct routerForwardMessage rfm = deserializeRouterForwardMessage(znpBuf+20);  //wtf
-                printf("RouterForwardedMessage:\r\n");
-                printf("Router header: \r\n");
+                printf("\r\nRouterForwardedMessage:\r\n");
+                printf("Router header: ");
                 printHeader(rfm.header);
-                printf("\r\nInfo message: \r\n");
-                printInfoMessage(rfm.infoMessage);
+            //    printf("\r\nInfo message: \r\n");
+                printf("\r\nSheader: ");
+                printHeader(rfm.infoMessage->header);
+                printf("\r\nSlqi: %02X\r\n",rfm.lqi);
                 printf("\r\n");
             } else  {
                 printf("Rx: ");
