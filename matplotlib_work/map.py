@@ -1,19 +1,24 @@
 import matplotlib.pyplot as plt
 from random import randint
 
-def update_plot(hl, xcoord, ycoord):
-    hl.set_xdata(xcoord)
-    hl.set_ydata(ycoord)
-    plt.draw()
+# run plot_init() once, then plug in xy coords as arrays into update_plot
 
-plt.ion() # interactive mode, allows updating of map using draw()
+class ScatterSet:
+	hl = None
+	fig = None
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
-plt.axis([0,10,0,10])
+	def update_set(self, xcoord, ycoord):
+		self.hl.set_xdata(xcoord)
+		self.hl.set_ydata(ycoord)
+		plt.draw()
 
-hl, = plt.plot([], [], 'ro')
+	def __init__(self):
+		plt.ion() # interactive mode, allows updating of map using draw()
+		self.fig = plt.figure()
+		ax = self.fig.add_subplot(111)
+		plt.axis([0,10,0,10])
+		hl, = plt.plot([], [], 'ro')
 
-while 1:
-	update_plot(hl, [randint(1,10), randint(1,10)], [randint(1,10), randint(1,10)])
-	fig.canvas.draw()
+x = ScatterSet()
+x.update_set([1],[1])
+plt.show()
