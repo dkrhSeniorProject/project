@@ -1,6 +1,9 @@
 import serial, signal, sys, os
 from collections import defaultdict
 from time import sleep
+from math import exp
+
+legal = ["87-4D-CE-01-00-4B-12-00","D9-4D-CE-01-00-4B-12-00","A1-BF-C9-01-00-4B-12-00","B0-BF-C9-01-00-4B-12-00"]			#legal mac addresses
 
 class mobile_node:						#routers
 	def __init__(self,mac):
@@ -52,19 +55,26 @@ class network:
 			#	print "Mac search", string[-23:]
 				if len(string[37:]) == 23:	#should never fail .. but it does
 			#		print "dafuq ",string[37:]
-					mac.append(str(string[37:]))			#add router
+					if str(string[37:]) in legal:
+						mac.append(str(string[37:]))			#add router
 					continue
 				else:
-					mac.append(str(string[-23:])) 
+					if str(string[-23:]) in legal:
+						mac.append(str(string[-23:])) 
 			#	print "Hehe: ", string[0:7]
 			if str(string[0:7]) == "Sheader":
 			#	print "dafuq2 : ",string[30:]
 				if len(string[-30:]) == 23:					#get end device
-					mac.append(str(string[-23:]))
+					if str(string[-30:]) in legal:
+						mac.append(str(string[-30:]))
+					else:	#illegal end-device. Discard everything collected since data can't be trusted 
+						mac = []		#reset mac and exit
+						break
 					continue
 				else:
 			#		print "using alternative method"
-					mac.append(str(string[-23:]))
+					if str(string[-23:]) in legal:
+						mac.append(str(string[-23:]))
 					continue 	
 			#get Slqi
 			if str(string[0:4]) == 'Slqi':			#if something was found, spit it out
@@ -72,6 +82,14 @@ class network:
 				mac.append(str(string[-2:]))
 	#	print mac
 		return mac			#return mac found
+
+	def get_dist_from_lqi(self,a,b,c):
+		#gets 3 lqi values in decimal
+		if (a < 10) or (b < 10) or (c < 10):
+			return None
+		else:
+			return [40.547*exp(-0.079*a),40.547*exp(-0.079*b),40.547*exp(-0.079*c)]
+
 
 	def print_data(self):
 		print "\nRouter mac\t\t\tZED\t\t\tLQI values",
