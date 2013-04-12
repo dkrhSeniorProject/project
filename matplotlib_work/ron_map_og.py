@@ -29,5 +29,3 @@ class Map:
 		print("Names of ScatterSets in scatter:")
 		for entry in self.scatter:
 			print(entry)
-	def closeWindow(self):
-		plt.close(self.fig)

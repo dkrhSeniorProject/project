@@ -3,17 +3,23 @@ import matplotlib
 matplotlib.use('WXAgg')
 
 import rd_brd
-from ron_map import Map
+import ron_map     #ron's original file
+#from ron_map import Map
 import os, sys, random
 from time import sleep
 import threading
 import wx
 from numpy import arange, sin, pi
 
-#from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
-#from matplotlib.backends.backend_wx import NavigationToolbar2Wx
-#from matplotlib.figure import Figure
-
+rx1 = 0
+ry1 = 0
+rd1 = 0
+rx2 = 0
+ry2 = 0
+rd2 = 0
+rx3 = 0
+ry3 = 0
+rd3 = 0
 
 class RedirectText(object):
   def __init__(self,TextCtrl):
@@ -22,42 +28,6 @@ class RedirectText(object):
   def write(self,string):
   #  self.out.WriteText(string)       #not thread-safe; do not use
     wx.CallAfter(self.out.AppendText,string)    #thread-safe
-
-class t2(wx.Panel):
-  def __init__(self,parent):
-    wx.Panel.__init__(self, parent)
-    self.plt = Map(selfie=self,xmin=0, xmax=9, ymin=0, ymax=9, windowWidth=6, windowHeight=6) # create a map object
-    self.plt.newScatter('red','ro')
-    self.sizer = wx.BoxSizer(wx.VERTICAL)
-    self.sizer.Add(self.plt.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
-    self.SetSizer(self.sizer)
-    self.Fit()
-
-  def draw(self,xcord,ycord):
-    self.plt.ax.clear()
-    print "X: ", xcord, "Y: ", ycord
-    self.plt.ax.plot(xcord,ycord,'ro')
-    self.plt.fig.canvas.draw() # each time this is called, the plot is redrawn
-    
-
-class testCanvas(wx.Panel):
-  def __init__(self, parent):
-    wx.Panel.__init__(self, parent)
-    self.figure = Figure()
-    self.axes = self.figure.add_subplot(111)
-    self.canvas = FigureCanvas(self, -1, self.figure)
-    self.sizer = wx.BoxSizer(wx.VERTICAL)
-    self.sizer.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
-    self.SetSizer(self.sizer)
-    self.Fit()
-
-  def draw(self):
-    self.axes.clear()
-    t = arange(0.0, 3.0, 0.01)
-    s = sin(2 * pi * t)
-    self.axes.plot(t, s)
-    self.canvas.draw()
-    
 
 
 class bPanel(wx.Panel):
@@ -68,7 +38,7 @@ class bPanel(wx.Panel):
 
 class MyFrame(wx.Frame):    #create new class derived from wx.Frame
   def __init__(self,portname):
-    wx.Frame.__init__(self,None, wx.ID_ANY, "In ma plums",size=(600,800))
+    wx.Frame.__init__(self,None, wx.ID_ANY, "Real Time Asset Tracking System v1.0",size=(600,400))
     self.port = portname 
     self.xCord = 0
     self.yCord = 0    #top-level window.
@@ -76,7 +46,7 @@ class MyFrame(wx.Frame):    #create new class derived from wx.Frame
     splitter = wx.SplitterWindow(self)
     #panel = wx.Panel(self, wx.ID_ANY)
     panel = bPanel(splitter)
-    self.tpanel = t2(splitter)
+    self.tpanel = bPanel(splitter)
 
     log = wx.TextCtrl(panel, wx.ID_ANY, size=(40,20),
                        style = wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_LINEWRAP)
@@ -132,6 +102,7 @@ class MyFrame(wx.Frame):    #create new class derived from wx.Frame
 
       if (len(line) > 0) and (str(line[0:4]) == "From"):
         print ".",
+        self.update_plot(random.randint(0,10),random.randint(0,10))
         line = stalk_net.ser.readline()     #read next line
         data = []     #create data packet
         while str(line[0:4]) != "From":     #loop until next "From:" line
@@ -140,13 +111,20 @@ class MyFrame(wx.Frame):    #create new class derived from wx.Frame
           line = stalk_net.ser.readline()     #read next line
         
         if (len(data) > 0) and (data != '\n'):    #parse and update
-          if self.cbVerbose.IsChecked():
-            print "\n", data
+          #if self.cbVerbose.IsChecked():
+            #print "\n", data
           info = stalk_net.parse_packet(data)
         # print info
           if len(info)%3 == 0:        #only update if we have macs & lqi data
             for i in range(0,len(info)/3):
               stalk_net.update(info[3*i],info[3*i+1],info[3*i+2])
+              print int(info[3*i+2],16), " , ",
+          if len(info) == 9:
+            #if we got all 3 data points (lqi values)
+            dists = stalk_net.get_dist_from_lqi(int(info[2],16),int(info[5],16),int(info[8],16)) 
+            # returns a list of the distance based on lqi
+            zed_Coord = self.triangulate(rx1,ry1,rd1,rx2,ry2,rd2,rx3,ry3,rd3)            
+
     else:
       line =  stalk_net.ser.readline()      #read a line and proceed
   #  sleep(0.1)      #longer sleep times will give you enough time to read the whole packet
@@ -157,12 +135,28 @@ class MyFrame(wx.Frame):    #create new class derived from wx.Frame
     stalk_net.ser.close()    #close serial connection
     print "Serial port sucesfully closed.\n"
 
-  def doPlot(self):
-    print "Initializing plot"
-    while self.collect:
-      sleep(1)
-      self.tpanel.draw(self.xCord,self.yCord)
-    
+  def triangulate(x1, y1, r1, x2, y2, r2, x3, y3, r3):
+    A = -2 * x1 + 2 * x2
+    B = -2 * y1 + 2 * y2
+    C = -2 * x2 + 2 * x3
+    D = -2 * y2 + 2 * y3
+    E = r1 ** 2 - r2 ** 2 - x1 ** 2 + x2 ** 2 - y1 ** 2 + y2 ** 2
+    F = r2 ** 2 - r3 ** 2 - x2 ** 2 + x3 ** 2 - y2 ** 2 + y3 ** 2
+
+    det = A * D - B * C
+    detX = E * D - B * F
+    detY = A * F - E * C
+
+    return [detX/det, detY/det]  
+
+  def init_plot(self):
+    self.y = ron_map.Map(xmin=0, xmax=9, ymin=0, ymax=9, windowWidth=6, windowHeight=6) # create a map object
+    self.y.newScatter('red', 'ro') # create a scatterplot set called 'red' with red circles as markers ('ro')
+
+  def update_plot(self,x,y):    #called when new x,y values are gotten
+    self.y.scatter['red'].update_set([x],[y])   #plot the x and y cordinates
+    self.y.fig.canvas.draw()    #plot
+
   def OnExit(self,e):
     self.Close(True)  #close frame
 
@@ -171,7 +165,9 @@ class MyFrame(wx.Frame):    #create new class derived from wx.Frame
     #rest of the program
     self.collect = True  #this controls whether we collect data or not
     self.t1 = threading.Thread(target=self.startCollect).start()
-    self.t2 = threading.Thread(target=self.doPlot).start()
+  #  self.t2 = threading.Thread(target=self.doPlot).start()
+    self.init_plot()    #initialize plot
+
     #self.t2  = threading.Thread(target=self.doPlot).start()#this thread will run the plot window
   #  self.doPlot()
     #begin the collection
@@ -186,7 +182,7 @@ class MyFrame(wx.Frame):    #create new class derived from wx.Frame
   #  self.t1.join()     #wait for thread to complete before proceeding
     self.stopBtn.Disable()  #show button 2
     self.startBtn.Enable()  #show button 1
-
+    self.y.closeWindow()
 
 if __name__ == "__main__":
   if len(sys.argv) !=2:
