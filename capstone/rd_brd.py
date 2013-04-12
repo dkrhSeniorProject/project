@@ -85,6 +85,7 @@ class network:
 
 	def get_dist_from_lqi(self,a,b,c):
 		#gets 3 lqi values in decimal
+		print "lqi's: ", a, " ", b, " ", c
 		if (a < 10) or (b < 10) or (c < 10):
 			return None
 		else:

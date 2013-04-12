@@ -92,7 +92,7 @@ class MyFrame(wx.Frame):    #create new class derived from wx.Frame
     sleep(0.5)    #this sleep keeps the board from freaking out
     line = stalk_net.ser.readline()     #read a line
     dists = [0,0,0]
-
+    
     while self.collect:
     
       if (len(line) > 0) and (str(line[0:4]) == "From"):
